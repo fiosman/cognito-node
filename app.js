@@ -47,11 +47,13 @@ app.post("/login", (req, res) => {
     Password: req.body.password,
   };
   const authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails(loginDetails);
+
   const userData = {
     Username: req.body.email,
     Pool: userPool,
   };
   const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+
   cognitoUser.authenticateUser(authenticationDetails, {
     onSuccess: (result) => {
       const loggedInUserData = result;
