@@ -22,14 +22,14 @@ app.post("/signup", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
 
-  const dataEmail = {
-    Name: "email",
-    Value: email,
-  };
+  // ** WE CURRENTLY DO NOT HAVE ANY ATTRIBUTES SET UP... ***
+  // const dataEmail = {
+  //   Name: "email",
+  //   Value: email,
+  // };
+  // const attributeEmail = new AmazonCognitoIdentity.CognitoUserAttribute(dataEmail);
 
-  const attributeEmail = new AmazonCognitoIdentity.CognitoUserAttribute(dataEmail);
-
-  userPool.signUp(email, password, [attributeEmail], null, (err, result) => {
+  userPool.signUp(email, password, [], null, (err, result) => {
     if (err) {
       res.json(err.message);
       return;
