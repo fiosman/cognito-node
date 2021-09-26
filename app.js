@@ -55,10 +55,10 @@ app.post("/login", (req, res) => {
   cognitoUser.authenticateUser(authenticationDetails, {
     onSuccess: (result) => {
       const loggedInUserData = result;
-      res.send(loggedInUserData);
+      res.json(loggedInUserData);
     },
     onFailure: (err) => {
-      res.send(err.message);
+      res.json(err.message);
       return;
     },
   });
