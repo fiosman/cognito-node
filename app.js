@@ -40,4 +40,28 @@ app.post("/signup", (req, res) => {
   });
 });
 
+//log in
+app.post("/login", (req, res) => {
+  const loginDetails = {
+    Username: req.body.email,
+    Password: req.body.password,
+  };
+  const authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails(loginDetails);
+  const userData = {
+    Username: req.body.email,
+    Pool: userPool,
+  };
+  const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+  cognitoUser.authenticateUser(authenticationDetails, {
+    onSuccess: (result) => {
+      const loggedInUserData = result;
+      res.send(loggedInUserData);
+    },
+    onFailure: (err) => {
+      res.send(err.message);
+      return;
+    },
+  });
+});
+
 app.listen("3000", () => console.log("Now listening on port 30000"));
