@@ -13,6 +13,10 @@ const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+//keep track of authenticated user. In the /change-password route handler we cannot create a new cognito user object.
+//We must use the same user that was authenticated in /login.
+let cognitoUser = "";
+
 app.get("/", (req, res) => {
   res.json("Hello");
 });
@@ -52,7 +56,7 @@ app.post("/login", (req, res) => {
     Username: req.body.email,
     Pool: userPool,
   };
-  const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+  cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
 
   cognitoUser.authenticateUser(authenticationDetails, {
     onSuccess: (result) => {
@@ -66,4 +70,22 @@ app.post("/login", (req, res) => {
   });
 });
 
-app.listen("3000", () => console.log("Now listening on port 30000"));
+app.post("/change-password", (req, res) => {
+  if (cognitoUser != null) {
+    cognitoUser.getSession((err, session) => {
+      if (err) {
+        res.json(err);
+        return;
+      }
+    });
+    cognitoUser.changePassword(req.body.oldPassword, req.body.newPassword, (err, data) => {
+      if (err) {
+        res.json(err);
+      } else {
+        res.json(data);
+      }
+    });
+  }
+});
+
+app.listen("3000", () => console.log("Now listening on port 3000"));
