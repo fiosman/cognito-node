@@ -21,6 +21,27 @@ app.get("/", (req, res) => {
   res.json("Hello");
 });
 
+const checkIfAuthenticated = (req, res, next) => {
+  const currentUser = userPool.getCurrentUser();
+
+  if (currentUser) {
+    currentUser.getSession((err, session) => {
+      if (err) {
+        res.json(err);
+        return;
+      } else {
+        next();
+      }
+    });
+  } else {
+    res.send("NO CURRENT USER SIGNED IN");
+  }
+};
+
+app.get("/secret", checkIfAuthenticated, (req, res) => {
+  res.json("This is the secret page");
+});
+
 //sign up
 app.post("/signup", (req, res) => {
   const email = req.body.email;
@@ -67,6 +88,13 @@ app.post("/login", (req, res) => {
       res.json(err.message);
       return;
     },
+  });
+});
+
+app.post("/signout", (req, res) => {
+  cognitoUser.globalSignOut({
+    onSuccess: (data) => res.send(data),
+    onFailure: (err) => res.json(err),
   });
 });
 
