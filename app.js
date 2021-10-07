@@ -34,7 +34,7 @@ const checkIfAuthenticated = (req, res, next) => {
       }
     });
   } else {
-    res.send("NO CURRENT USER SIGNED IN");
+    res.send("NO USER SIGNED IN");
   }
 };
 
