@@ -1,4 +1,5 @@
 const express = require("express");
+const path = require("path");
 const app = express();
 const AmazonCognitoIdentity = require("amazon-cognito-identity-js");
 const cognitoConfig = require("./config.json");
@@ -10,6 +11,8 @@ const poolData = {
 
 const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
 
+app.set("views", path.join(__dirname, "views"));
+app.set("view engine", "ejs");
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -18,7 +21,7 @@ app.use(express.urlencoded({ extended: true }));
 let cognitoUser = "";
 
 app.get("/", (req, res) => {
-  res.json("Hello");
+  res.render("landing_page");
 });
 
 const checkIfAuthenticated = (req, res, next) => {
@@ -43,7 +46,13 @@ app.get("/secret", checkIfAuthenticated, (req, res) => {
 });
 
 //sign up
-app.post("/signup", (req, res) => {
+app.get("/signup/:accountType", (req, res) => {
+  res.render("doctor_signup");
+});
+app.get("/signup/:accountType", (req, res) => {
+  res.render("patient_signup");
+});
+app.post("/signup/:accountType", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
 
@@ -66,6 +75,9 @@ app.post("/signup", (req, res) => {
 });
 
 //log in
+app.get("/login", (req, res) => {
+  res.render("login");
+});
 app.post("/login", (req, res) => {
   const loginDetails = {
     Username: req.body.email,
