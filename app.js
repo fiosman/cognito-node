@@ -46,11 +46,25 @@ app.get("/secret", checkIfAuthenticated, (req, res) => {
 });
 
 //sign up
-app.get("/signup/:accountType", (req, res) => {
-  res.render("doctor_signup");
-});
-app.get("/signup/:accountType", (req, res) => {
-  res.render("patient_signup");
+app.get("/signup/:accountType", (req, res) => res.render("doctor_signup"));
+app.get("/signup/:accountType", (req, res) => res.render("patient_signup"));
+app.get("/confirmation", (req, res) => res.render("confirmation"));
+app.get("/confirmed", (req, res) => {
+  //the below params come from the query string produced by the custom message trigger function we defined in lambda console
+  //we bypass URL redirect to aws UI here. Instead the whole flow is through our app UI
+  const userData = {
+    Username: req.query.email,
+    Pool: userPool,
+  };
+  const verificationCode = req.query.code;
+  const dummyCognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+  dummyCognitoUser.confirmRegistration(verificationCode, true, (err, res) => {
+    if (err) {
+      res.send("Error with confirmation");
+      return;
+    }
+  });
+  res.render("confirmed");
 });
 app.post("/signup/:accountType", (req, res) => {
   const email = req.body.email;
@@ -70,14 +84,12 @@ app.post("/signup/:accountType", (req, res) => {
     }
     const cognitoUser = result;
     const sub = cognitoUser.userSub;
-    res.json(sub);
+    res.redirect("/confirmation");
   });
 });
 
 //log in
-app.get("/login", (req, res) => {
-  res.render("login");
-});
+app.get("/login", (req, res) => res.render("login"));
 app.post("/login", (req, res) => {
   const loginDetails = {
     Username: req.body.email,
