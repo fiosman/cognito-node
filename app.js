@@ -140,4 +140,36 @@ app.post("/change-password", (req, res) => {
   }
 });
 
+//forgot password
+app.get("/forgot_password", (req, res) => res.render("forgot_password"));
+app.post("/forgot_password", (req, res) => {
+  const userData = {
+    Username: req.body.email,
+    Pool: userPool,
+  };
+  const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+
+  cognitoUser.forgotPassword({
+    onSuccess: (data) => {
+      res.redirect("/confirm_password");
+    },
+    onFailure: (err) => res.json(err),
+  });
+});
+//confirm password reset
+app.get("/confirm_password", (req, res) => {
+  res.render("confirm_password");
+});
+app.post("/confirm_password", (req, res) => {
+  const userData = {
+    Username: req.body.email,
+    Pool: userPool,
+  };
+  const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+  cognitoUser.confirmPassword(verificationCode, newPassword, {
+    onSuccess: (data) => res.json(data),
+    onFailure: (err) => res.json(err),
+  });
+});
+
 app.listen("3000", () => console.log("Now listening on port 3000"));
