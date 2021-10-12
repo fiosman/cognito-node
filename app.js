@@ -3,6 +3,7 @@ const path = require("path");
 const app = express();
 const AmazonCognitoIdentity = require("amazon-cognito-identity-js");
 const cognitoConfig = require("./config.json");
+const cookieParser = require("cookie-parser");
 
 const poolData = {
   UserPoolId: cognitoConfig.cognito.userpoolId,
@@ -15,7 +16,7 @@ app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
+app.use(cookieParser());
 //keep track of authenticated user. In the /change-password route handler we cannot create a new cognito user object.
 //We must use the same user that was authenticated in /login.
 let cognitoUser = "";
@@ -151,6 +152,12 @@ app.post("/forgot_password", (req, res) => {
 
   cognitoUser.forgotPassword({
     onSuccess: (data) => {
+      res.cookie("userEmail", userData.Username, {
+        maxAge: 120000,
+        secure: true,
+        httpOnly: true,
+        sameSite: "lax",
+      });
       res.redirect("/confirm_password");
     },
     onFailure: (err) => res.json(err),
@@ -162,12 +169,17 @@ app.get("/confirm_password", (req, res) => {
 });
 app.post("/confirm_password", (req, res) => {
   const userData = {
-    Username: req.body.email,
+    Username: req.cookies.userEmail,
     Pool: userPool,
   };
+  const verificationCode = req.body.verification_code;
+  const newPassword = req.body.new_password;
   const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
   cognitoUser.confirmPassword(verificationCode, newPassword, {
-    onSuccess: (data) => res.json(data),
+    onSuccess: (data) => {
+      res.clearCookie("userEmail");
+      res.json(data);
+    },
     onFailure: (err) => res.json(err),
   });
 });
