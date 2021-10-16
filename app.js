@@ -59,13 +59,15 @@ app.get("/confirmed", (req, res) => {
   };
   const verificationCode = req.query.code;
   const dummyCognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
-  dummyCognitoUser.confirmRegistration(verificationCode, true, (err, res) => {
+  dummyCognitoUser.confirmRegistration(verificationCode, true, (err, result) => {
     if (err) {
-      res.send("Error with confirmation");
-      return;
+      res.json({ error: err });
+    } else {
+      res.json({
+        isConfirmed: true,
+      });
     }
   });
-  res.render("confirmed");
 });
 app.post("/signup/:accountType", (req, res) => {
   const email = req.body.email;
@@ -110,9 +112,25 @@ app.post("/login", (req, res) => {
       res.json(loggedInUserData);
     },
     onFailure: (err) => {
-      res.json(err.message);
-      return;
+      if (err.name === "UserNotConfirmedException") {
+        return res.json({ isConfirmed: false, userData: userData });
+      }
     },
+  });
+});
+
+app.post("/resend-confirmation", (req, res) => {
+  const userData = {
+    Username: req.body.email,
+    Pool: userPool,
+  };
+  const dummyCognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
+  dummyCognitoUser.resendConfirmationCode((error, result) => {
+    if (error) {
+      return res.json({ error: error.message });
+    } else {
+      return res.json({ message: "Validation email was resent!" });
+    }
   });
 });
 
