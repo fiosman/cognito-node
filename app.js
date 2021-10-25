@@ -5,7 +5,7 @@ const AmazonCognitoIdentity = require("amazon-cognito-identity-js");
 const cognitoConfig = require("./config.json");
 const cookieParser = require("cookie-parser");
 const multer = require("multer");
-const upload = multer();
+const { createSecretKey } = require("crypto");
 
 const poolData = {
   UserPoolId: cognitoConfig.cognito.userpoolId,
@@ -204,8 +204,21 @@ app.post("/confirm_password", (req, res) => {
   });
 });
 
-app.post("/uploadFile", upload.none(), (req, res) => {
-  console.log(req);
+const upload = multer({
+  dest: "./uploads",
+  fileFilter: (req, file, cb) => {
+    if (!file.originalname.match(/\.(jpg|jpeg|png)$/)) {
+      return cb(null, false);
+    }
+    cb(null, true);
+  },
+});
+
+app.post("/uploadFile", upload.single("file"), (req, res) => {
+  if (!req.file) {
+    return res.json({ err: "Invalid file type uploaded. Only images are allowed." });
+  }
+  return res.json({ file: req.file });
 });
 
 app.listen("3000", () => console.log("Now listening on port 3000"));
