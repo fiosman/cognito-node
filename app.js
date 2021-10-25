@@ -4,6 +4,8 @@ const app = express();
 const AmazonCognitoIdentity = require("amazon-cognito-identity-js");
 const cognitoConfig = require("./config.json");
 const cookieParser = require("cookie-parser");
+const multer = require("multer");
+const upload = multer();
 
 const poolData = {
   UserPoolId: cognitoConfig.cognito.userpoolId,
@@ -200,6 +202,10 @@ app.post("/confirm_password", (req, res) => {
     },
     onFailure: (err) => res.json(err),
   });
+});
+
+app.post("/uploadFile", upload.none(), (req, res) => {
+  console.log(req);
 });
 
 app.listen("3000", () => console.log("Now listening on port 3000"));
