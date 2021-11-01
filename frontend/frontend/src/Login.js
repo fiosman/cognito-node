@@ -1,7 +1,21 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Form, Input, Button } from "antd";
+import { loginUser } from "./services/Cognito";
+import { getCurrentUser } from "./services/Cognito";
+import { useHistory } from "react-router";
 
 const Login = () => {
+  const [userInfo, setUserInfo] = useState({ email: "", password: "" });
+  const history = useHistory();
+
+  const handleLogin = async () => {
+    const userData = await loginUser(userInfo);
+    console.log(userData);
+    if (userData) {
+      history.push("/dashboard");
+    }
+  };
+
   return (
     <Form
       name="basic"
@@ -22,6 +36,7 @@ const Login = () => {
             message: "Email is required",
           },
         ]}
+        onBlur={(e) => setUserInfo({ ...userInfo, email: e.target.value })}
       >
         <Input />
       </Form.Item>
@@ -35,6 +50,7 @@ const Login = () => {
             message: "Password is required",
           },
         ]}
+        onBlur={(e) => setUserInfo({ ...userInfo, password: e.target.value })}
       >
         <Input.Password />
       </Form.Item>
@@ -45,7 +61,7 @@ const Login = () => {
           span: 16,
         }}
       >
-        <Button type="primary" htmlType="submit">
+        <Button type="primary" htmlType="submit" onClick={handleLogin}>
           Submit
         </Button>
       </Form.Item>

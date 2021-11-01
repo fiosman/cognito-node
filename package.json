@@ -11,13 +11,19 @@
   "license": "ISC",
   "dependencies": {
     "amazon-cognito-identity-js": "^5.1.2",
+    "antd": "^4.16.13",
+    "axios": "^0.24.0",
+    "cognito-express": "^2.0.19",
     "cookie-parser": "^1.4.5",
+    "cors": "^2.8.5",
     "dayjs": "^1.10.7",
     "ejs": "^3.1.6",
     "express": "^4.17.1",
     "multer": "^1.4.3",
     "nodemon": "^2.0.13",
-    "path": "^0.12.7"
+    "path": "^0.12.7",
+    "react-router": "^5.2.1",
+    "react-router-dom": "^5.3.0"
   },
   "devDependencies": {}
 }

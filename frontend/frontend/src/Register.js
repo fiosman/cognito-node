@@ -1,7 +1,14 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Form, Input, Button } from "antd";
+import { signupUser } from "./services/Cognito";
 
 const Register = () => {
+  const [userInfo, setUserInfo] = useState({ email: "", password: "" });
+
+  const registerHandler = async () => {
+    await signupUser(userInfo);
+  };
+
   return (
     <Form
       name="basic"
@@ -22,6 +29,7 @@ const Register = () => {
             message: "Email is required",
           },
         ]}
+        onBlur={(e) => setUserInfo({ ...userInfo, email: e.target.value })}
       >
         <Input />
       </Form.Item>
@@ -35,6 +43,7 @@ const Register = () => {
             message: "Password is required",
           },
         ]}
+        onBlur={(e) => setUserInfo({ ...userInfo, password: e.target.value })}
       >
         <Input.Password />
       </Form.Item>
@@ -45,7 +54,7 @@ const Register = () => {
           span: 16,
         }}
       >
-        <Button type="primary" htmlType="submit">
+        <Button type="primary" htmlType="submit" onClick={registerHandler}>
           Submit
         </Button>
       </Form.Item>

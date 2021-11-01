@@ -1,3 +1,0 @@
-//Sign up
-
-//Log in

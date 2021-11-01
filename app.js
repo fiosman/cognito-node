@@ -5,7 +5,9 @@ const AmazonCognitoIdentity = require("amazon-cognito-identity-js");
 const cognitoConfig = require("./config.json");
 const cookieParser = require("cookie-parser");
 const multer = require("multer");
-const { createSecretKey } = require("crypto");
+const cors = require("cors");
+const CognitoExpress = require("cognito-express");
+const { access } = require("fs");
 
 const poolData = {
   UserPoolId: cognitoConfig.cognito.userpoolId,
@@ -14,8 +16,16 @@ const poolData = {
 
 const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
 
+const cognitoExpress = new CognitoExpress({
+  region: cognitoConfig.cognito.region,
+  cognitoUserPoolId: cognitoConfig.cognito.userpoolId,
+  tokenUse: "access",
+  tokenExpiration: 3600,
+});
+
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -27,24 +37,47 @@ app.get("/", (req, res) => {
   res.render("landing_page");
 });
 
-const checkIfAuthenticated = (req, res, next) => {
-  const currentUser = userPool.getCurrentUser();
+// const checkIfAuthenticated = (req, res, next) => {
+//   const accessTokenFromClient = req.headers.accesstoken;
+//   if (!accessTokenFromClient)
+//     return res.status(401).json({ err: "Access token missing from headers" });
 
-  if (currentUser) {
-    currentUser.getSession((err, session) => {
-      if (err) {
-        res.json(err);
-        return;
-      } else {
-        next();
-      }
-    });
-  } else {
-    res.send("NO USER SIGNED IN");
-  }
+//   cognitoExpress.validate(accessTokenFromClient, function (err, res) {
+//     if (err) {
+//       return res.status(401).json({ err: err });
+//     } else {
+//       next();
+//     }
+//   });
+
+// const currentUser = userPool.getCurrentUser();
+
+// if (currentUser) {
+//   currentUser.getSession((err, session) => {
+//     if (err) {
+//       res.json(err);
+//       return;
+//     } else {
+//       next();
+//     }
+//   });
+// } else {
+//   res.send("NO USER SIGNED IN");
+// }
+// };
+
+const isAuthenticated = (req, res, next) => {
+  let accessTokenFromClient = req.headers.accesstoken;
+
+  if (!accessTokenFromClient) return res.status(401).send("Access Token missing from header");
+
+  cognitoExpress.validate(accessTokenFromClient, function (err, response) {
+    if (err) return res.status(401).send(err);
+    next();
+  });
 };
 
-app.get("/secret", checkIfAuthenticated, (req, res) => {
+app.get("/secret", isAuthenticated, (req, res) => {
   res.json("This is the secret page");
 });
 
@@ -84,12 +117,12 @@ app.post("/signup/:accountType", (req, res) => {
 
   userPool.signUp(email, password, [], null, (err, result) => {
     if (err) {
-      res.json(err.message);
+      res.status(400).json({ err: err.message });
       return;
     }
     const cognitoUser = result;
     const sub = cognitoUser.userSub;
-    res.redirect("/confirmation");
+    return res.json({ sub: sub });
   });
 });
 
@@ -161,6 +194,27 @@ app.post("/change-password", (req, res) => {
   }
 });
 
+//get currentUser
+app.get("/current_user", (req, res) => {
+  const currentUser = userPool.getCurrentUser();
+  if (currentUser) {
+    currentUser.getSession((err, session) => {
+      if (err) {
+        return res.json(err);
+      } else {
+        currentUser.getUserAttributes((err, data) => {
+          if (err) {
+            return res.json(err);
+          } else {
+            return res.json(data);
+          }
+        });
+      }
+    });
+  } else {
+    return res.status(400).json({ err: "Something went wrong" });
+  }
+});
 //forgot password
 app.get("/forgot_password", (req, res) => res.render("forgot_password"));
 app.post("/forgot_password", (req, res) => {
