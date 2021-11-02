@@ -82,6 +82,7 @@ function ValidateToken(opts) {
   }
 
   if (decodedJwt.payload.token_use != opts.tokenType) {
+    console.log(opts.tokenType);
     console.log("Not an " + opts.tokenType + " token");
     return;
   }
