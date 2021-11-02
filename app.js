@@ -6,8 +6,7 @@ const cognitoConfig = require("./config.json");
 const cookieParser = require("cookie-parser");
 const multer = require("multer");
 const cors = require("cors");
-const CognitoExpress = require("cognito-express");
-const { validate } = require("./services/jwtValidation");
+const { validateJWT } = require("./services/jwtValidation");
 
 const poolData = {
   UserPoolId: cognitoConfig.cognito.userpoolId,
@@ -15,13 +14,6 @@ const poolData = {
 };
 
 const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
-
-const cognitoExpress = new CognitoExpress({
-  region: cognitoConfig.cognito.region,
-  cognitoUserPoolId: cognitoConfig.cognito.userpoolId,
-  tokenUse: "access",
-  tokenExpiration: 3600,
-});
 
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
@@ -67,12 +59,17 @@ app.get("/", (req, res) => {
 // };
 
 const isAuthenticated = (req, res, next) => {
-  let accessTokenFromClient = req.headers.accesstoken;
+  let config = {
+    poolRegion: cognitoConfig.cognito.region,
+    userPoolId: cognitoConfig.cognito.userpoolId,
+    tokenType: "access",
+    token: req.headers.accesstoken,
+  };
 
-  if (!accessTokenFromClient) return res.status(401).send("Access Token missing from header");
+  if (!config.token) return res.status(401).send("Access Token missing from header");
 
-  validate(accessTokenFromClient, function (err, response) {
-    if (err) return res.status(401).send(err);
+  validateJWT(config, function (err, response) {
+    if (err) return res.status(401).json({ error: err.message });
     next();
   });
 };

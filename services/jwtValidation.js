@@ -1,15 +1,14 @@
 const request = require("request");
 const jwkToPem = require("jwk-to-pem");
 const jwt = require("jsonwebtoken");
-const poolRegion = require("../config.json").cognito.region;
-const userPoolId = require("../config.json").cognito.userpoolId;
 
-function verify(opts) {
-  let { poolRegion, userPoolId, token } = opts;
+function validateJWT(opts, callback) {
+  let { poolRegion, userPoolId, token, tokenType } = opts;
   let iss = "https://cognito-idp." + poolRegion + ".amazonaws.com/" + userPoolId;
-  let pems;
+  let pems = null;
 
-  if (!pems) {
+  //Fetch JWKs and save as PEM
+  if (pems === null) {
     request(
       {
         url: iss + "/.well-known/jwks.json",
@@ -32,109 +31,52 @@ function verify(opts) {
             const pem = jwkToPem(jwk);
             pems[key_id] = pem;
           }
-          const jwtValidOpts = {
-            iss,
-            tokenType: "access",
-            ignoreExpiry: "false",
-            token,
-            pems,
-          };
-          const isValid = ValidateToken({
-            iss,
-            tokenType: "access",
-            ignoreExpiry: "false",
-            token,
-            pems,
+
+          //validate the token
+          const decodedJwt = jwt.decode(token, {
+            complete: true,
           });
-          console.log("Is token valid?");
-          console.log(isValid);
+
+          if (!decodedJwt) {
+            return callback(new Error("Not a valid JSON web token!"));
+          }
+
+          if (decodedJwt.payload.iss != iss) {
+            return callback(new Error("Not a valid issuer"));
+          }
+
+          if (decodedJwt.payload.token_use != tokenType) {
+            return callback(new Error("Not an " + tokenType + " token"));
+          }
+
+          const kid = decodedJwt.header.kid;
+          const pem = pems[kid];
+          if (!pem) {
+            return callback(new Error("Invalid access token"));
+          }
+          jwt.verify(
+            token,
+            pem,
+            {
+              issuer: iss,
+              ignoreExpiration: false,
+            },
+            function (err, payload) {
+              if (err) {
+                return callback(err);
+              } else {
+                return callback(null, { message: "Token validated" });
+              }
+            }
+          );
         } else {
-          console.log("Error downloading JWK!");
-        }
-      }
-    );
-  } else {
-    const isValid = ValidateToken({
-      iss,
-      tokenType: "access",
-      ignoreExpiry: "false",
-      token,
-      pems,
-    });
-    console.log("Is token valid?");
-    console.log(isValid);
-  }
-}
-
-function ValidateToken(opts) {
-  var isValid = false;
-  var decodedJwt = jwt.decode(opts.token, {
-    complete: true,
-  });
-  if (!decodedJwt) {
-    console.log("Not a valid JWT token");
-    return;
-  }
-
-  if (decodedJwt.payload.iss != opts.iss) {
-    console.log("invalid issuer");
-    return;
-  }
-
-  if (decodedJwt.payload.token_use != opts.tokenType) {
-    console.log(opts.tokenType);
-    console.log("Not an " + opts.tokenType + " token");
-    return;
-  }
-
-  var kid = decodedJwt.header.kid;
-  var pem = opts.pems[kid];
-  if (!pem) {
-    console.log("Invalid access token");
-    return;
-  }
-
-  console.log("Ignore expiry?\n" + opts.ignoreExpiry);
-  if (opts.ignoreExpiry == "true") {
-    console.log("Skipping expiration check...");
-    jwt.verify(
-      opts.token,
-      pem,
-      {
-        issuer: opts.iss,
-        ignoreExpiration: true,
-      },
-      function (err, payload) {
-        if (err) {
-          console.log(err);
-        } else {
-          console.log(payload);
-          isValid = true;
-        }
-      }
-    );
-  } else {
-    console.log("Also checking token expiration...");
-    jwt.verify(
-      opts.token,
-      pem,
-      {
-        issuer: opts.iss,
-        ignoreExpiration: false,
-      },
-      function (err, payload) {
-        if (err) {
-          console.log("Error verifying token: " + err.name + ":" + err.message);
-        } else {
-          console.log(payload);
-          isValid = true;
+          return callback(error);
         }
       }
     );
   }
-  return isValid;
 }
 
 module.exports = {
-  verify,
+  validateJWT,
 };
