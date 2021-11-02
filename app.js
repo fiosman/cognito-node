@@ -7,7 +7,7 @@ const cookieParser = require("cookie-parser");
 const multer = require("multer");
 const cors = require("cors");
 const CognitoExpress = require("cognito-express");
-const { access } = require("fs");
+const { validate } = require("./services/jwtValidation");
 
 const poolData = {
   UserPoolId: cognitoConfig.cognito.userpoolId,
@@ -71,7 +71,7 @@ const isAuthenticated = (req, res, next) => {
 
   if (!accessTokenFromClient) return res.status(401).send("Access Token missing from header");
 
-  cognitoExpress.validate(accessTokenFromClient, function (err, response) {
+  validate(accessTokenFromClient, function (err, response) {
     if (err) return res.status(401).send(err);
     next();
   });
@@ -144,7 +144,7 @@ app.post("/login", (req, res) => {
   cognitoUser.authenticateUser(authenticationDetails, {
     onSuccess: (result) => {
       const loggedInUserData = result;
-      res.json(loggedInUserData);
+      return res.json(loggedInUserData);
     },
     onFailure: (err) => {
       if (err.name === "UserNotConfirmedException") {
