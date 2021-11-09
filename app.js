@@ -7,6 +7,7 @@ const cookieParser = require("cookie-parser");
 const multer = require("multer");
 const cors = require("cors");
 const { validateJWT } = require("./services/jwtValidation");
+const stripe = require("stripe")("enter sk here");
 
 const poolData = {
   UserPoolId: cognitoConfig.cognito.userpoolId,
@@ -24,6 +25,21 @@ app.use(cookieParser());
 //keep track of authenticated user. In the /change-password route handler we cannot create a new cognito user object.
 //We must use the same user that was authenticated in /login.
 let cognitoUser = "";
+
+app.post("/create-payment-intent", async (req, res) => {
+  const { items } = req.body;
+  // Create a PaymentIntent with the order amount and currency
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount: 1000,
+    currency: "cad",
+    payment_method_types: ["card"],
+    receipt_email: "",
+  });
+
+  return res.json({
+    clientSecret: paymentIntent.client_secret,
+  });
+});
 
 app.get("/", (req, res) => {
   res.render("landing_page");
