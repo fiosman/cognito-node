@@ -5,11 +5,14 @@ export const signupUser = (userDetails) => {
   return instance.post("/signup/doctor", userDetails);
 };
 //Log in
-export const loginUser = async (userDetails) => {
-  const { data } = await instance.post("/login", userDetails);
-  return data;
+export const loginUser = (userDetails) => {
+  return instance.post("/login", userDetails);
 };
 //get current user
 export const getCurrentUser = () => {
   return instance.get("/current_user");
+};
+
+export const getDash = () => {
+  return instance.get("/secret");
 };

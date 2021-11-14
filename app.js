@@ -85,7 +85,14 @@ const isAuthenticated = (req, res, next) => {
   if (!config.token) return res.status(401).send("Access Token missing from header");
 
   validateJWT(config, function (err, response) {
-    if (err) return res.status(401).json({ error: err.message });
+    if (err && err.message === "jwt expired") {
+      cognitoUser.getSession((err, data) => {
+        console.log(data.getAccessToken().jwtToken);
+        res.json({ accessToken: data.getAccessToken().jwtToken });
+      });
+    } else if (err) {
+      return res.status(401).json({ error: err.message });
+    }
     next();
   });
 };
@@ -160,9 +167,7 @@ app.post("/login", (req, res) => {
       return res.json(loggedInUserData);
     },
     onFailure: (err) => {
-      if (err.name === "UserNotConfirmedException") {
-        return res.json({ isConfirmed: false, userData: userData });
-      }
+      if (err) return res.status(401).json({ err: err.message });
     },
   });
 });

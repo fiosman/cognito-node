@@ -9,9 +9,8 @@ const Login = () => {
   const history = useHistory();
 
   const handleLogin = async () => {
-    const userData = await loginUser(userInfo);
-    console.log(userData);
-    if (userData) {
+    const details = await loginUser(userInfo);
+    if (details) {
       history.push("/dashboard");
     }
   };

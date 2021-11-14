@@ -1,21 +1,29 @@
 import React, { useState, useEffect } from "react";
-import { getCurrentUser } from "./services/Cognito";
+import { getCurrentUser, getDash } from "./services/Cognito";
 
 const Dashboard = () => {
   const [loggedInUser, setLoggedInUser] = useState("");
 
+  // useEffect(() => {
+  //   console.log("component mount");
+  //   async function fetchData() {
+  //     const currentUser = await getCurrentUser();
+  //     console.log(currentUser);
+  //     if (currentUser) {
+  //       setLoggedInUser(currentUser.data[2].Value);
+  //     } else {
+  //       setLoggedInUser("");
+  //     }
+  //   }
+  //   fetchData();
+  // }, []);
+
   useEffect(() => {
-    console.log("component mount");
-    async function fetchData() {
-      const currentUser = await getCurrentUser();
-      console.log(currentUser);
-      if (currentUser) {
-        setLoggedInUser(currentUser.data[2].Value);
-      } else {
-        setLoggedInUser("");
-      }
+    async function goToDash() {
+      const dashBoard = await getDash();
+      console.log(dashBoard);
     }
-    fetchData();
+    goToDash();
   }, []);
 
   return (
