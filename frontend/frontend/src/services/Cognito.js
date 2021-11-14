@@ -1,5 +1,5 @@
 import axios from "axios";
-const instance = axios.create({ baseURL: "http://localhost:8081" });
+const instance = axios.create({ baseURL: "http://2437-72-138-224-233.ngrok.io" });
 //Sign up
 export const signupUser = (userDetails) => {
   return instance.post("/signup/doctor", userDetails);

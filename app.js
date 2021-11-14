@@ -75,30 +75,52 @@ app.get("/", (req, res) => {
 // };
 
 const isAuthenticated = (req, res, next) => {
-  let config = {
-    poolRegion: cognitoConfig.cognito.region,
-    userPoolId: cognitoConfig.cognito.userpoolId,
-    tokenType: "access",
-    token: req.headers.accesstoken,
-  };
+  // let config = {
+  //   poolRegion: cognitoConfig.cognito.region,
+  //   userPoolId: cognitoConfig.cognito.userpoolId,
+  //   tokenType: "access",
+  //   token: req.headers.accesstoken,
+  // };
 
-  if (!config.token) return res.status(401).send("Access Token missing from header");
+  // if (!config.token) return res.status(401).send("Access Token missing from header");
 
-  validateJWT(config, function (err, response) {
-    if (err && err.message === "jwt expired") {
-      cognitoUser.getSession((err, data) => {
-        console.log(data.getAccessToken().jwtToken);
-        res.json({ accessToken: data.getAccessToken().jwtToken });
-      });
-    } else if (err) {
-      return res.status(401).json({ error: err.message });
+  // validateJWT(config, function (err, response) {
+  //   if (err) {
+  //     return res.status(401).json({ err: err.message });
+  //   }
+
+  //   cognitoUser.getSession((err, data) => {
+  //     if (err) {
+  //       return res.status(401).json({ err: err.message });
+  //     } else {
+  //       next();
+  //     }
+  //   });
+  // });
+
+  if (!cognitoUser) {
+    return res.status(401).json({ err: "Could not retrieve the current user" });
+  }
+
+  cognitoUser.getSession((err, session) => {
+    console.log(session.getAccessToken().getJwtToken());
+    console.log("------------------");
+    console.log(session.getRefreshToken().getToken());
+    console.log("------------------");
+    if (err) {
+      return res.status(401).json({ err: err });
     }
-    next();
+
+    if (session.isValid()) {
+      next();
+    } else {
+      return res.status(401).json({ err: "Session is not valid" });
+    }
   });
 };
 
 app.get("/secret", isAuthenticated, (req, res) => {
-  res.json("This is the secret page");
+  return res.json("This is the secret page");
 });
 
 //sign up
@@ -213,14 +235,13 @@ app.post("/change-password", (req, res) => {
 });
 
 //get currentUser
-app.get("/current_user", (req, res) => {
-  const currentUser = userPool.getCurrentUser();
-  if (currentUser) {
-    currentUser.getSession((err, session) => {
+app.get("/current_user", isAuthenticated, (req, res) => {
+  if (cognitoUser) {
+    cognitoUser.getSession((err, session) => {
       if (err) {
         return res.json(err);
       } else {
-        currentUser.getUserAttributes((err, data) => {
+        cognitoUser.getUserAttributes((err, data) => {
           if (err) {
             return res.json(err);
           } else {
